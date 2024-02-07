@@ -15,8 +15,6 @@ Node *createNode(char *content) {
   return node;
 }
 
-bool is_operator(char c) { return c == '+' || c == '*'; }
-
 int operator_precedence(char c) {
   switch (c) {
   case '+': {
@@ -30,6 +28,8 @@ int operator_precedence(char c) {
   }
   }
 }
+
+bool is_operator(char c) { return operator_precedence(c) > -1; }
 
 char *pop_token(char **s) {
   char *token = malloc(sizeof(char) * MAX_TOKEN_SIZE);
@@ -65,6 +65,17 @@ char *peek_token(char **s) {
   return token;
 }
 
+int peek_operator_precedence(char **code) {
+  char *next = peek_token(code);
+  if (strlen(next) == 0) {
+    free(next);
+    return -1;
+  }
+  int precedence = operator_precedence(*next);
+  free(next);
+  return precedence;
+}
+
 Node *parse_node(char **code) {
   char *token = pop_token(code);
 
@@ -80,16 +91,8 @@ Node *parse_node(char **code) {
 Node *parse_expression_incremental(char **code) {
   Node *left = parse_node(code);
 
-  char *token = peek_token(code);
-  if (strlen(token) == 0) {
-    free(token);
-    return left;
-  }
-
-  bool next_is_operator = is_operator(token[0]);
-  free(token);
-
-  if (next_is_operator) {
+  int next_operator_precedence = peek_operator_precedence(code);
+  if (next_operator_precedence > -1) {
     Node *next = parse_node(code);
     next->left = left;
     next->right = parse_expression_incremental(code);
@@ -103,10 +106,8 @@ Node *parse_expression_incremental(char **code) {
 Node *parse_expression_decremental(char **code) {
   Node *left = parse_node(code);
   while (1) {
-    char *next = peek_token(code);
-    bool next_is_operator = is_operator(next[0]);
-    free(next);
-    if (next_is_operator) {
+    int next_operator_precedence = peek_operator_precedence(code);
+    if (next_operator_precedence > -1) {
       Node *operator= parse_node(code);
       Node *right = parse_node(code);
 
@@ -149,7 +150,7 @@ Node *parse_expression(char **code, int min_precedence) {
 int main(void) {
   {
     // NOTE: parsing incremental precedence
-    char *code = "2 + c * 3";
+    char *code = "2 + 3 + c * 3";
     Node *tree = parse_expression_incremental(&code);
     print_tree(tree);
   }
@@ -157,7 +158,7 @@ int main(void) {
   {
     // NOTE: parsing decremental precedence
     // https://youtu.be/fIPO4G42wYE?t=2293
-    char *code = "2 * c + 3";
+    char *code = "2 * c + 3 + 4";
     Node *tree = parse_expression_decremental(&code);
     print_tree(tree);
   }

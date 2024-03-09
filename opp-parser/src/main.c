@@ -146,5 +146,7 @@ int main(void) {
   assert(root != NULL);
   compile_expr(root);
   printf("\n");
+
+  munmap(memory_block, memory_size);
   return 0;
 }

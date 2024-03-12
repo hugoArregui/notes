@@ -91,7 +91,7 @@ Expr *parse_expression_1(MemoryArena *arena, stb_lexer *lexer, Expr *lhs,
     Expr *rhs = parse_primary(arena, lexer);
     lookahead = get_token(lexer, false);
     while (lookahead.result != 0 && lookahead.is_binary_operator &&
-           lookahead.precedence > min_precedence) {
+           lookahead.precedence > op.precedence) {
       rhs = parse_expression_1(
           arena, lexer, rhs,
           op.precedence + (lookahead.precedence > op.precedence ? 1 : 0));
@@ -138,7 +138,7 @@ int main(void) {
   char *lexer_storage = pushSize(&arena, lexer_storage_size, DEFAULT_ALIGNMENT);
   stb_lexer lexer;
 
-  char *text = "1+2*3+4";
+  char *text = "1*2*3+4";
   stb_c_lexer_init(&lexer, text, text + strlen(text), lexer_storage,
                    lexer_storage_size);
 
